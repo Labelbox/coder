@@ -194,11 +194,11 @@ func (api *API) postConvertLoginType(rw http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Value:    token,
 		Expires:  claims.Expiry.Time(),
-		Secure:   api.SecureAuthCookie,
+		Secure:   true,
 		HttpOnly: true,
 		// Must be SameSite to work on the redirected auth flow from the
 		// oauth provider.
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 	})
 	httpapi.Write(ctx, rw, http.StatusCreated, codersdk.OAuthConversionResponse{
 		StateString: stateString,

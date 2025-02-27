@@ -123,7 +123,8 @@ func ExtractOAuth2(config promoauth.OAuth2Config, client *http.Client, authURLOp
 					Value:    state,
 					Path:     "/",
 					HttpOnly: true,
-					SameSite: http.SameSiteLaxMode,
+					SameSite: http.SameSiteNoneMode,
+					Secure:   true,
 				})
 				// Redirect must always be specified, otherwise
 				// an old redirect could apply!
@@ -132,7 +133,8 @@ func ExtractOAuth2(config promoauth.OAuth2Config, client *http.Client, authURLOp
 					Value:    redirect,
 					Path:     "/",
 					HttpOnly: true,
-					SameSite: http.SameSiteLaxMode,
+					SameSite: http.SameSiteNoneMode,
+					Secure:   true,
 				})
 
 				http.Redirect(rw, r, config.AuthCodeURL(state, opts...), http.StatusTemporaryRedirect)
