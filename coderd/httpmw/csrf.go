@@ -19,7 +19,7 @@ import (
 func CSRF(secureCookie bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		mw := nosurf.New(next)
-		mw.SetBaseCookie(http.Cookie{Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: secureCookie})
+		mw.SetBaseCookie(http.Cookie{Path: "/", HttpOnly: true, SameSite: http.SameSiteNoneMode, Secure: true})
 		mw.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sessCookie, err := r.Cookie(codersdk.SessionTokenCookie)
 			if err == nil &&
