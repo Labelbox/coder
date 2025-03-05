@@ -1,0 +1,57 @@
+version: "1.0"
+
+stages:
+  - "clone"
+  - "build"
+  - "push"
+
+steps:
+  main_clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "Labelbox/coder"
+    revision: ${{CF_REVISION}}
+    git: "github-integration"
+    stage: "clone"
+
+  create_artifact:
+    title: "Create Artifact"
+    image: ${{LB_CICD_CONTAINER_TOOLS}}
+    commands:
+      - git remote add upstream https://github.com/coder/coder.git || true && git fetch upstream
+      - curl -L https://nixos.org/nix/install | sh -s -- --daemon
+      - /nix/var/nix/profiles/default/bin/nix-shell --run 'make build/coder_linux_amd64'
+      - mkdir tmp && ln scripts/Dockerfile tmp/Dockerfile && ln scripts/Dockerfile.base tmp/Dockerfile.base
+      - /nix/var/nix/profiles/default/bin/nix-shell --run 'ln build/coder_$(./scripts/version.sh)_$(go env GOOS)_$(go env GOARCH) tmp/coder'
+    stage: "build"
+
+  build_base:
+    type: "build"
+    title: "Build Base Image"
+    dockerfile: "Dockerfile.base"
+    working_directory: tmp
+    image_name: "ghcr.io/coder/coder-base"
+    tag: "latest"
+    disable_push: true
+    stage: "build"
+
+  build:
+    type: "build"
+    title: "Build Image"
+    buildx: true
+    working_directory: tmp
+    image_name: "container/coder"
+    tag: ${{CF_SHORT_REVISION}}
+    build_arguments:
+      - BASE_IMAGE=ghcr.io/coder/coder-base:latest
+      - CODER_VERSION=${{CF_SHORT_REVISION}}
+    disable_push: true
+    stage: "build"
+
+  push:
+    type: "push"
+    title: "Push image to ${{DOCKER_REGISTRY}}"
+    candidate: ${{build}}
+    tag: ${{CF_SHORT_REVISION}}
+    registry: "${{DOCKER_REGISTRY}}"
+    stage: "push"
